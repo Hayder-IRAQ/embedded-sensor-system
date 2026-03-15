@@ -1,0 +1,106 @@
+# Embedded Sensor System — Configuration
+# =========================================
+
+system:
+  name: "sensor-node-01"
+  sample_rate_hz: 10
+  log_level: INFO
+  simulation: true
+
+sensors:
+  bme280:
+    enabled: true
+    bus: 1
+    address: 0x76
+    oversample: 16
+    calibration:
+      temperature: -0.3
+      humidity: 2.0
+
+  mpu6050:
+    enabled: true
+    bus: 1
+    address: 0x68
+    accel_range: "4g"
+    gyro_range: "500dps"
+
+  ads1115:
+    enabled: false
+    bus: 1
+    address: 0x48
+    gain: "4.096V"
+    channel: 0
+
+  gps:
+    enabled: false
+    port: "/dev/ttyAMA0"
+    baudrate: 9600
+
+  hcsr04:
+    enabled: false
+    trigger_pin: 23
+    echo_pin: 24
+
+  dht22:
+    enabled: true
+    pin: 4
+
+  bh1750:
+    enabled: true
+    bus: 1
+    address: 0x23
+
+  ina219:
+    enabled: false
+    bus: 1
+    address: 0x40
+    shunt_ohms: 0.1
+
+processing:
+  kalman:
+    process_noise: 0.01
+    measurement_noise: 0.1
+    adaptive: true
+
+  fusion:
+    strategy: "adaptive"
+    sources:
+      - id: "bme280"
+        weight: 0.7
+        measurement: "temperature"
+      - id: "dht22"
+        weight: 0.3
+        measurement: "temperature"
+
+  anomaly:
+    method: "combined"
+    threshold: 3.0
+    window_size: 100
+    rate_limit: 10.0
+
+telemetry:
+  mqtt:
+    enabled: true
+    broker: "mqtt.example.com"
+    port: 8883
+    tls: true
+    client_id: "sensor-node-01"
+    topic_prefix: "iot/sensors"
+    qos: 1
+    publish_interval_seconds: 5
+
+  http:
+    enabled: true
+    host: "0.0.0.0"
+    port: 8080
+
+logging:
+  format: "sqlite"
+  path: "./data"
+  max_entries: 500000
+  rotation: true
+
+watchdog:
+  enabled: true
+  timeout_seconds: 30
+  check_interval_seconds: 5
